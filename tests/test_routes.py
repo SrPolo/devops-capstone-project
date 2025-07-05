@@ -10,7 +10,7 @@ import logging
 from unittest import TestCase
 from tests.factories import AccountFactory
 from service.common import status  # HTTP Status Codes
-from service.models import db, Account, init_db
+from service.models import db, Account, init_db, DataValidationError
 from service.routes import app
 
 DATABASE_URI = os.getenv(
@@ -145,3 +145,36 @@ class TestAccountService(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
         self.assertEqual(len(data), 3)
+    
+    def test_update_an_account(self):
+        """It should Update an existing Account"""
+        # Crear cuenta inicial
+        account = self._create_accounts(1)[0]
+        
+        # Modificar datos
+        updated_account = account.serialize()
+        updated_account["name"] = "Updated Name"
+        updated_account["email"] = "updated@example.com"
+        
+        response = self.client.put(
+            f"{BASE_URL}/{account.id}",
+            json=updated_account,
+            content_type="application/json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(data["id"], account.id)
+        self.assertEqual(data["name"], "Updated Name")
+        self.assertEqual(data["email"], "updated@example.com")
+
+    def test_update_account_not_found(self):
+        """It should return 404 when updating non-existent Account"""
+        fake_account = AccountFactory()
+        fake_account.id = 0  # ID que no existe
+        response = self.client.put(
+            f"{BASE_URL}/0",
+            json=fake_account.serialize(),
+            content_type="application/json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
