@@ -93,7 +93,7 @@ def update_account(account_id):
     account = Account.find(account_id)
     if not account:
         abort(status.HTTP_404_NOT_FOUND, f"Account with id '{account_id}' not found.")
-    
+
     data = request.get_json()
     if not data:
         abort(status.HTTP_400_BAD_REQUEST, "Invalid account data.")
